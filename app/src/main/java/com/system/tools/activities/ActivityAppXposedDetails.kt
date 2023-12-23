@@ -19,7 +19,7 @@ import com.omarea.common.ui.DialogHelper
 import com.system.store.SpfConfig
 import com.system.store.XposedExtension
 import com.system.ui.IntInputFilter
-import com.system.vaddin.IAppConfigAidlInterface
+import com.omarea.vaddin.IAppConfigAidlInterface
 import com.system.tools.R
 import com.system.xposed.XposedCheck
 import kotlinx.android.synthetic.main.activity_app_xposed_details.*
