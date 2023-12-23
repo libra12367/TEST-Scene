@@ -31,10 +31,6 @@ public class CpuFrequencyUtils {
         return platform.startsWith("mt");
     }
 
-    private String getCpuFreqValue(String path) {
-        
-    }
-
     public String[] getAvailableFrequencies(Integer cluster) {
         if (cluster >= getClusterInfo().size()) {
             return new String[]{};
