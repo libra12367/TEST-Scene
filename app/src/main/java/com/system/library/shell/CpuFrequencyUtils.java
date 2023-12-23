@@ -4,6 +4,7 @@ import com.omarea.common.shell.KeepShellPublic;
 import com.omarea.common.shell.KernelProrp;
 import com.system.model.CpuClusterStatus;
 import com.system.model.CpuStatus;
+import com.system.tools.SceneJNI;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -22,6 +23,7 @@ public class CpuFrequencyUtils {
     private final String scaling_governor = cpufreq_sys_dir + "scaling_governor";
     private final Object cpuClusterInfoLoading = true;
     private ArrayList<String[]> cpuClusterInfo;
+    private SceneJNI JNI = new SceneJNI();
     private int coreCount = -1;
 
     private boolean isMTK() {
@@ -29,6 +31,14 @@ public class CpuFrequencyUtils {
             platform = new PlatformUtils().getCPUName();
         }
         return platform.startsWith("mt");
+    }
+
+    private String getCpuFreqValue(String path) {
+        long freqValue = JNI.getKernelPropLong(path);
+        if (freqValue > -1) {
+            return "" + freqValue;
+        }
+        return "";
     }
 
     public String[] getAvailableFrequencies(Integer cluster) {
