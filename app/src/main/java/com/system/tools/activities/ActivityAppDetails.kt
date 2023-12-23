@@ -27,7 +27,7 @@ import com.system.scene_mode.ModeSwitcher
 import com.system.scene_mode.SceneMode
 import com.system.store.SceneConfigStore
 import com.system.store.SpfConfig
-import com.omarea.utils.AccessibleServiceHelper
+import com.system.utils.AccessibleServiceHelper
 import com.system.tools.R
 import com.system.tools.dialogs.DialogAppBoostPolicy
 import com.system.tools.dialogs.DialogAppCGroupMem

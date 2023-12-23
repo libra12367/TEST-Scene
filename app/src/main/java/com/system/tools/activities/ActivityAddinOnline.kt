@@ -22,9 +22,9 @@ import com.omarea.common.ui.DialogHelper
 import com.omarea.common.ui.ProgressBarDialog
 import com.omarea.krscript.WebViewInjector
 import com.omarea.krscript.ui.ParamsFileChooserRender
-import com.omarea.library.calculator.Flags
-import com.omarea.scene_mode.CpuConfigInstaller
-import com.omarea.scene_mode.ModeSwitcher
+import com.system.library.calculator.Flags
+import com.system.scene_mode.CpuConfigInstaller
+import com.system.scene_mode.ModeSwitcher
 import com.system.tools.R
 import kotlinx.android.synthetic.main.activity_addin_online.*
 import java.io.File
