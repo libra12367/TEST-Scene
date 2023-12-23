@@ -1,0 +1,1 @@
+am startservice -n com.system.tools/.services.CompileService -a com.system.tools.SpeedCompile
