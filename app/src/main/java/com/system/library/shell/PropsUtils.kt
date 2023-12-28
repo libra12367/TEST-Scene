@@ -1,7 +1,6 @@
 package com.system.library.shell
 
 import com.omarea.common.shell.KeepShellPublic
-
 /**
  * Created by Hello on 2017/8/8.
  */

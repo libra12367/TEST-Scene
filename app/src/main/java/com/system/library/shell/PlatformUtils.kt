@@ -1,5 +1,6 @@
 package com.system.library.shell
 
+import com.system.library.shell.PropsUtils
 /**
  * 读取处理器平台
  * Created by helloklf on 2017/6/3.

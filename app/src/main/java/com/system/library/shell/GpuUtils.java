@@ -3,7 +3,7 @@ package com.system.library.shell;
 import com.omarea.common.shell.KeepShellPublic;
 import com.omarea.common.shell.KernelProrp;
 import com.omarea.common.shell.RootFile;
-import com.system.model.CpuStatus;
+import com.system.library.shell.CpuStatus;
 
 import java.io.File;
 import java.util.ArrayList;
