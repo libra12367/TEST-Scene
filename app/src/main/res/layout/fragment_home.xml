@@ -6,7 +6,7 @@
     android:orientation="vertical"
     android:padding="8dp">
 
-    <com.omarea.common.ui.OverScrollView
+    <com.system.common.ui.OverScrollView
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_weight="1"
@@ -306,7 +306,7 @@
                 </LinearLayout>
             </LinearLayout>
 
-            <com.omarea.common.ui.OverScrollGridView
+            <com.system.common.ui.OverScrollGridView
                 android:id="@+id/cpu_core_list"
                 android:layout_width="match_parent"
                 android:layout_height="210dp"
@@ -544,7 +544,7 @@
                 android:visibility="gone" />
 
         </LinearLayout>
-    </com.omarea.common.ui.OverScrollView>
+    </com.system.common.ui.OverScrollView>
 
     <LinearLayout
         android:id="@+id/powermode_toggles"
