@@ -217,56 +217,97 @@ class FragmentHome : androidx.fragment.app.Fragment() {
     private var updateTick = 0
 
     @SuppressLint("SetTextI18n")
+    @SuppressLint("SetTextI18n")
     private fun updateInfo() {
         if (coreCount < 1) {
-            coreCount = CpuFrequencyUtils.getCoreCount()
+            coreCount = CpuFrequencyUtil.getCoreCount()
+            myHandler.post {
+                try {
+                    cpu_core_count.text = "$coreCount 核心"
+                } catch (ex: Exception) {
+                }
+            }
         }
         val cores = ArrayList<CpuCoreInfo>()
-        val loads = CpuFrequencyUtils.getCpuLoad()
         for (coreIndex in 0 until coreCount) {
-            val core = CpuCoreInfo()
+            val core = CpuCoreInfo(coreIndex)
 
-            core.currentFreq = CpuFrequencyUtils.getCurrentFrequency("cpu$coreIndex")
-            if (!maxFreqs.containsKey(coreIndex) || (core.currentFreq != "" && maxFreqs.get(coreIndex).isNullOrEmpty())) {
-                maxFreqs.put(coreIndex, CpuFrequencyUtils.getCurrentMaxFrequency("cpu" + coreIndex))
+            core.currentFreq = CpuFrequencyUtil.getCurrentFrequency("cpu$coreIndex")
+            if (!maxFreqs.containsKey(coreIndex) || (core.currentFreq != "" && maxFreqs[coreIndex].isNullOrEmpty())) {
+                maxFreqs[coreIndex] = CpuFrequencyUtil.getCurrentMaxFrequency("cpu$coreIndex")
             }
-            core.maxFreq = maxFreqs.get(coreIndex)
+            core.maxFreq = maxFreqs[coreIndex]
 
-            if (!minFreqs.containsKey(coreIndex) || (core.currentFreq != "" && minFreqs.get(coreIndex).isNullOrEmpty())) {
-                minFreqs.put(coreIndex, CpuFrequencyUtils.getCurrentMinFrequency("cpu" + coreIndex))
+            if (!minFreqs.containsKey(coreIndex) || (core.currentFreq != "" && minFreqs[coreIndex].isNullOrEmpty())) {
+                minFreqs.put(coreIndex, CpuFrequencyUtil.getCurrentMinFrequency("cpu$coreIndex"))
             }
-            core.minFreq = minFreqs.get(coreIndex)
-
-            if (loads.containsKey(coreIndex)) {
-                core.loadRatio = loads.get(coreIndex)!!
-            }
+            core.minFreq = minFreqs[coreIndex]
             cores.add(core)
         }
-        val gpuFreq = GpuUtils.getGpuFreq() + "%"
+        val loads = cpuLoadUtils.cpuLoad
+        for (core in cores) {
+            if (loads.containsKey(core.coreIndex)) {
+                core.loadRatio = loads[core.coreIndex]!!
+            }
+        }
+
+        val gpuFreq = GpuUtils.getGpuFreq() + "Mhz"
         val gpuLoad = GpuUtils.getGpuLoad()
+
+        // 电池电流
+        batteryCurrentNow = batteryManager.getLongProperty(BatteryManager.BATTERY_PROPERTY_CURRENT_NOW)
+        // 电量
+        val batteryCapacity = batteryManager.getIntProperty(BatteryManager.BATTERY_PROPERTY_CAPACITY)
+        // 电池温度
+        val temperature = GlobalStatus.updateBatteryTemperature()
+
+        updateRamInfo()
+        val memInfo = memoryUtils.memoryInfo
+
         myHandler.post {
             try {
-                cpu_core_count.text = String.format(getString(R.string.monitor_core_count), coreCount)
+                home_swap_cached.text = "" + (memInfo.swapCached / 1024) + "MB"
+                home_buffers.text = "" + (memInfo.buffers / 1024) + "MB"
+                home_dirty.text = "" + (memInfo.dirty / 1024) + "MB"
+
+                home_running_time.text = elapsedRealtimeStr()
+                if (batteryCurrentNow != Long.MIN_VALUE && batteryCurrentNow != Long.MAX_VALUE) {
+                    home_battery_now.text = (batteryCurrentNow / globalSPF.getInt(SpfConfig.GLOBAL_SPF_CURRENT_NOW_UNIT, SpfConfig.GLOBAL_SPF_CURRENT_NOW_UNIT_DEFAULT)).toString() + "mA"
+                } else {
+                    home_battery_now.text = "--"
+                }
+                home_battery_capacity.text = "$batteryCapacity%"
+                home_battery_temperature.text = "${temperature}°C"
 
                 home_gpu_freq.text = gpuFreq
-                home_gpu_load.text = String.format(getString(R.string.monitor_laod1), gpuLoad)
+                home_gpu_load.text = "负载：$gpuLoad%"
                 if (gpuLoad > -1) {
                     home_gpu_chat.setData(100.toFloat(), (100 - gpuLoad).toFloat())
                 }
                 if (loads.containsKey(-1)) {
-                    cpu_core_total_load.text = String.format(getString(R.string.monitor_laod), loads.get(-1)!!.toInt())
-                    home_cpu_chat.setData(100.toFloat(), (100 - loads.get(-1)!!.toInt()).toFloat())
+                    cpu_core_total_load.text = "负载：" + loads[-1]!!.toInt().toString() + "%"
+                    home_cpu_chat.setData(100.toFloat(), (100 - loads[-1]!!.toInt()).toFloat())
                 }
                 if (cpu_core_list.adapter == null) {
+                    val layoutParams = cpu_core_list.layoutParams
                     if (cores.size < 6) {
+                        layoutParams.height = dp2px(105 * 2F)
                         cpu_core_list.numColumns = 2
+                    } else if (cores.size > 12) {
+                        layoutParams.height = dp2px(105 * 4F)
+                    } else if (cores.size > 8) {
+                        layoutParams.height = dp2px(105 * 3F)
+                    } else {
+                        layoutParams.height = dp2px(105 * 2F)
                     }
+                    cpu_core_list.layoutParams = layoutParams
                     cpu_core_list.adapter = AdapterCpuCores(context!!, cores)
                 } else {
                     (cpu_core_list.adapter as AdapterCpuCores).setData(cores)
                 }
+
             } catch (ex: Exception) {
-                Log.e("Exception", ex.message)
+
             }
         }
         updateTick++
@@ -274,6 +315,27 @@ class FragmentHome : androidx.fragment.app.Fragment() {
             updateTick = 0
             minFreqs.clear()
             maxFreqs.clear()
+        }
+    }
+
+    private fun setModeState() {
+        btn_powersave.alpha = 0.4f
+        btn_defaultmode.alpha = 0.4f
+        btn_gamemode.alpha = 0.4f
+        btn_fastmode.alpha = 0.4f
+        when (ModeSwitcher.getCurrentPowerMode()) {
+            ModeSwitcher.BALANCE -> {
+                btn_defaultmode.alpha = 1f
+            }
+            ModeSwitcher.PERFORMANCE -> {
+                btn_gamemode.alpha = 1f
+            }
+            ModeSwitcher.POWERSAVE -> {
+                btn_powersave.alpha = 1f
+            }
+            ModeSwitcher.FAST -> {
+                btn_fastmode.alpha = 1f
+            }
         }
     }
 
