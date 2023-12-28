@@ -1,4 +1,4 @@
-package com.omarea.library.shell;
+package com.system.library.shell;
 
 import com.omarea.common.shell.KeepShellPublic;
 import com.omarea.common.shell.KernelProrp;
