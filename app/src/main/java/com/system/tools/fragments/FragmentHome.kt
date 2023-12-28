@@ -156,12 +156,6 @@ class FragmentHome : androidx.fragment.app.Fragment() {
         }
         activity!!.title = getString(R.string.app_name)
 
-        if (globalSPF.getBoolean(SpfConfig.HOME_QUICK_SWITCH, true) && (CpuConfigInstaller().dynamicSupport(Scene.context) || modeSwitcher.modeConfigCompleted())) {
-            powermode_toggles.visibility = View.VISIBLE
-        } else {
-            powermode_toggles.visibility = View.GONE
-        }
-
         setModeState()
         maxFreqs.clear()
         minFreqs.clear()
