@@ -6,9 +6,14 @@ import com.omarea.common.shell.KernelProrp;
 
 import java.util.HashMap;
 
+/**
+ * CPU负载计算器
+ */
 public class CpuLoadUtils {
     private static String lastCpuState = "";
+    private static HashMap<Integer, Double> lastCpuStateMap;
     private static String lastCpuStateSum = "";
+    private static Long lastCpuStateTime;
 
     public CpuLoadUtils() {
         lastCpuState = KernelProrp.INSTANCE.getProp("/proc/stat", "^cpu");
@@ -16,7 +21,7 @@ public class CpuLoadUtils {
     }
 
     private int getCpuIndex(String[] cols) {
-        int cpuIndex = -1;
+        int cpuIndex;
         if (cols[0].equals("cpu")) {
             cpuIndex = -1;
         } else {
@@ -38,6 +43,10 @@ public class CpuLoadUtils {
     }
 
     public HashMap<Integer, Double> getCpuLoad() {
+        if (lastCpuStateMap != null && System.currentTimeMillis() - lastCpuStateTime < 500) {
+            return lastCpuStateMap;
+        }
+
         @SuppressLint("UseSparseArrays") HashMap<Integer, Double> loads = new HashMap<>();
         String times = KernelProrp.INSTANCE.getProp("/proc/stat", "^cpu");
         if (!times.equals("error") && times.startsWith("cpu")) {
@@ -84,6 +93,9 @@ public class CpuLoadUtils {
                         }
                     }
                     lastCpuState = times;
+                    // 缓存状态以优化性能
+                    lastCpuStateTime = System.currentTimeMillis();
+                    lastCpuStateMap = loads;
                     return loads;
                 }
             } catch (Exception ex) {
@@ -95,6 +107,10 @@ public class CpuLoadUtils {
     }
 
     public Double getCpuLoadSum() {
+        if (lastCpuStateMap != null && System.currentTimeMillis() - lastCpuStateTime < 500 && lastCpuStateMap.containsKey(-1)) {
+            return lastCpuStateMap.get(-1);
+        }
+
         String times = KernelProrp.INSTANCE.getProp("/proc/stat", "^cpu ");
         if (!times.equals("error") && times.startsWith("cpu")) {
             try {
@@ -109,7 +125,7 @@ public class CpuLoadUtils {
                     for (String cpuCurrentTime : curTick) {
                         String[] cols1 = cpuCurrentTime.replaceAll(" {2}", " ").split(" ");
                         if (cols1[0].trim().equals("cpu")) {
-                            String[] cols0 = null;
+                            String[] cols0;
                             // 根据前缀匹配上一个时段的cpu时间数据
                             for (String cpu : prevTick) {
                                 // startsWith条件必须加个空格，因为搜索cpu的时候 "cpu0 ..."、"cpu1 ..."等都会匹配
@@ -138,7 +154,7 @@ public class CpuLoadUtils {
                         }
                     }
                 }
-            } catch (Exception ex) {
+            } catch (Exception ignored) {
             }
         }
         return -1d;
