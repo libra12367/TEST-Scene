@@ -6,7 +6,7 @@
     android:orientation="vertical"
     android:padding="8dp">
 
-    <com.system.common.ui.OverScrollView
+    <com.omarea.common.ui.OverScrollView
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_weight="1"
@@ -48,7 +48,7 @@
                             android:text="RAM"
                             android:textSize="11dp" />
 
-                        <com.system.ui.RamChartView
+                        <com.omarea.ui.RamChartView
                             android:id="@+id/home_raminfo"
                             android:layout_width="60dp"
                             android:layout_height="60dp"
@@ -131,7 +131,7 @@
                             android:text="SWAP"
                             android:textSize="10dp" />
 
-                        <com.system.ui.RamChartView
+                        <com.omarea.ui.RamChartView
                             android:id="@+id/home_swapstate_chat"
                             android:layout_width="60dp"
                             android:layout_height="60dp"
@@ -208,7 +208,7 @@
                         android:layout_width="60dp"
                         android:layout_height="60dp">
 
-                        <com.system.ui.CpuChartView
+                        <com.omarea.ui.CpuChartView
                             android:id="@+id/home_gpu_chat"
                             android:layout_width="60dp"
                             android:layout_height="60dp"
@@ -289,7 +289,7 @@
                         android:layout_width="60dp"
                         android:layout_height="60dp">
 
-                        <com.system.ui.CpuChartView
+                        <com.omarea.ui.CpuChartView
                             android:id="@+id/home_cpu_chat"
                             android:layout_width="60dp"
                             android:layout_height="60dp"
@@ -306,7 +306,7 @@
                 </LinearLayout>
             </LinearLayout>
 
-            <com.system.common.ui.OverScrollGridView
+            <com.omarea.common.ui.OverScrollGridView
                 android:id="@+id/cpu_core_list"
                 android:layout_width="match_parent"
                 android:layout_height="210dp"
@@ -544,7 +544,7 @@
                 android:visibility="gone" />
 
         </LinearLayout>
-    </com.system.common.ui.OverScrollView>
+    </com.omarea.common.ui.OverScrollView>
 
     <LinearLayout
         android:id="@+id/powermode_toggles"
