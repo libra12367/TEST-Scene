@@ -1,4 +1,4 @@
-package com.system.vtools.fragments
+package com.system.tools.fragments
 
 import android.annotation.SuppressLint
 import android.app.ActivityManager
@@ -24,8 +24,8 @@ import com.system.scene_mode.ModeSwitcher
 import com.system.store.SpfConfig
 import com.system.ui.AdapterCpuCores
 import com.system.utils.AccessibleServiceHelper
-import com.system.vtools.R
-import com.system.vtools.dialogs.DialogElectricityUnit
+import com.system.tools.R
+import com.system.tools.dialogs.DialogElectricityUnit
 import kotlinx.android.synthetic.main.fragment_home.*
 import kotlinx.coroutines.*
 import java.math.BigDecimal
@@ -120,7 +120,7 @@ class FragmentHome : androidx.fragment.app.Fragment() {
 
         home_help.setOnClickListener {
             try {
-                val uri = Uri.parse("http://vtools.omarea.com/")
+                val uri = Uri.parse("http://tools.omarea.com/")
                 val intent = Intent(Intent.ACTION_VIEW, uri)
                 startActivity(intent)
             } catch (ex: Exception) {
