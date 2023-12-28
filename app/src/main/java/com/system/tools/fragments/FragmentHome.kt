@@ -154,25 +154,28 @@ class FragmentHome : androidx.fragment.app.Fragment() {
         if (isDetached) {
             return
         }
+        activity!!.title = getString(R.string.app_name)
+
+        setModeState()
         maxFreqs.clear()
         minFreqs.clear()
         stopTimer()
-        timer = Timer()
-        timer!!.schedule(object : TimerTask() {
-            override fun run() {
-                updateInfo()
-            }
-        }, 0, 1000)
-        updateRamInfo()
+        timer = Timer().apply {
+            schedule(object : TimerTask() {
+                override fun run() {
+                    updateInfo()
+                }
+            }, 0, 1500)
+        }
     }
 
     private var coreCount = -1
-    private var activityManager: ActivityManager? = null
+    private lateinit var batteryManager: BatteryManager
+    private lateinit var activityManager: ActivityManager
 
     private var minFreqs = HashMap<Int, String>()
     private var maxFreqs = HashMap<Int, String>()
     fun format1(value: Double): String {
-
         var bd = BigDecimal(value)
         bd = bd.setScale(1, RoundingMode.HALF_UP)
         return bd.toString()
@@ -182,41 +185,58 @@ class FragmentHome : androidx.fragment.app.Fragment() {
     private fun updateRamInfo() {
         try {
             val info = ActivityManager.MemoryInfo()
-            if (activityManager == null) {
-                activityManager = context!!.getSystemService(ACTIVITY_SERVICE) as ActivityManager
-            }
-            activityManager!!.getMemoryInfo(info)
+            activityManager.getMemoryInfo(info)
             val totalMem = (info.totalMem / 1024 / 1024f).toInt()
             val availMem = (info.availMem / 1024 / 1024f).toInt()
-            home_raminfo_text.text = "${((totalMem - availMem) * 100 / totalMem)}% (${totalMem / 1024 + 1}GB)"
-            home_raminfo.setData(totalMem.toFloat(), availMem.toFloat())
+
             val swapInfo = KeepShellPublic.doCmdSync("free -m | grep Swap")
+            var swapTotal = 0
+            var swaoUse = 0
             if (swapInfo.contains("Swap")) {
                 try {
                     val swapInfos = swapInfo.substring(swapInfo.indexOf(" "), swapInfo.lastIndexOf(" ")).trim()
-                    if (Regex("[\\d]{1,}[\\s]{1,}[\\d]{1,}").matches(swapInfos)) {
-                        val total = swapInfos.substring(0, swapInfos.indexOf(" ")).trim().toInt()
-                        val use = swapInfos.substring(swapInfos.indexOf(" ")).trim().toInt()
-                        val free = total - use
-                        home_swapstate_chat.setData(total.toFloat(), free.toFloat())
-                        if (total > 99) {
-                            home_zramsize_text.text = "${(use * 100.0 / total).toInt()}% (${format1(total / 1024.0)}GB)"
-                        } else {
-                            home_zramsize_text.text = "${(use * 100.0 / total).toInt()}% (${total}MB)"
-                        }
+                    if (Regex("[\\d]+[\\s]{1,}[\\d]{1,}").matches(swapInfos)) {
+                        swapTotal = swapInfos.substring(0, swapInfos.indexOf(" ")).trim().toInt()
+                        swaoUse = swapInfos.substring(swapInfos.indexOf(" ")).trim().toInt()
                     }
                 } catch (ex: java.lang.Exception) {
                 }
                 // home_swapstate.text = swapInfo.substring(swapInfo.indexOf(" "), swapInfo.lastIndexOf(" ")).trim()
-            } else {
+            }
+
+            myHandler.post {
+                home_raminfo_text?.text = "${((totalMem - availMem) * 100 / totalMem)}% (${totalMem / 1024 + 1}GB)"
+                home_raminfo?.setData(totalMem.toFloat(), availMem.toFloat())
+                home_swapstate_chat?.setData(swapTotal.toFloat(), (swapTotal - swaoUse).toFloat())
+                home_zramsize_text?.text = (
+                        if (swapTotal > 99) {
+                            "${(swaoUse * 100.0 / swapTotal).toInt()}% (${format1(swapTotal / 1024.0)}GB)"
+                        } else {
+                            "${(swaoUse * 100.0 / swapTotal).toInt()}% (${swapTotal}MB)"
+                        }
+                        )
             }
         } catch (ex: Exception) {
         }
     }
 
+    /**
+     * dp转换成px
+     */
+    private fun dp2px(dpValue: Float): Int {
+        val scale = context!!.resources.displayMetrics.density
+        return (dpValue * scale + 0.5f).toInt()
+    }
+
+    private fun elapsedRealtimeStr(): String {
+        val timer = SystemClock.elapsedRealtime() / 1000
+        return String.format("%02d:%02d:%02d", timer / 3600, timer % 3600 / 60, timer % 60)
+    }
+
     private var updateTick = 0
 
-    @SuppressLint("SetTextI18n")
+    private var batteryCurrentNow = 0L
+
     @SuppressLint("SetTextI18n")
     private fun updateInfo() {
         if (coreCount < 1) {
@@ -349,5 +369,68 @@ class FragmentHome : androidx.fragment.app.Fragment() {
     override fun onPause() {
         stopTimer()
         super.onPause()
+    }
+
+    private fun toggleMode(modeSwitcher: ModeSwitcher, mode: String): Deferred<Unit> {
+        return GlobalScope.async {
+            context?.run {
+                if (modeSwitcher.modeConfigCompleted()) {
+                    modeSwitcher.executePowercfgMode(mode, packageName)
+                } else {
+                    CpuConfigInstaller().installOfficialConfig(context!!)
+                    modeSwitcher.executePowercfgMode(mode, packageName)
+                }
+            }
+        }
+    }
+
+    private fun installConfig(toMode: String) {
+        val dynamic = AccessibleServiceHelper().serviceRunning(context!!) && spf.getBoolean(SpfConfig.GLOBAL_SPF_DYNAMIC_CONTROL, SpfConfig.GLOBAL_SPF_DYNAMIC_CONTROL_DEFAULT)
+        if (!dynamic && ModeSwitcher.getCurrentPowerMode() == toMode) {
+            modeSwitcher.setCurrent("", "")
+            globalSPF.edit().putString(SpfConfig.GLOBAL_SPF_POWERCFG, "").apply()
+            myHandler.post {
+                DialogHelper.confirmBlur(this.activity!!,
+                        "提示",
+                        "需要重启手机才能恢复默认调度，是否立即重启？",
+                        {
+                            KeepShellPublic.doCmdSync("sync\nsleep 1\nsvc power reboot || reboot")
+                        },
+                        null)
+                setModeState()
+            }
+            return
+        }
+
+        val progressBarDialog = ProgressBarDialog(this.activity!!, "home-mode-switch")
+        progressBarDialog.showDialog(getString(R.string.please_wait))
+
+        GlobalScope.launch(Dispatchers.Main) {
+            toggleMode(modeSwitcher, toMode).await()
+
+            setModeState()
+            maxFreqs.clear()
+            minFreqs.clear()
+            updateInfo()
+            if (dynamic) {
+                globalSPF.edit().putString(SpfConfig.GLOBAL_SPF_POWERCFG, "").apply()
+                DialogHelper.alert(activity!!,
+                        "提示",
+                        "“场景模式-动态响应”已被激活，你手动选择的模式随时可能被覆盖。\n\n如果你需要长期使用手动控制，请前往“功能”菜单-“性能界面”界面关闭“动态响应”！")
+            } else {
+                globalSPF.edit().putString(SpfConfig.GLOBAL_SPF_POWERCFG, toMode).apply()
+                if (!globalSPF.getBoolean(SpfConfig.GLOBAL_SPF_POWERCFG_FRIST_NOTIFY, false)) {
+                    DialogHelper.confirm(activity!!,
+                            "提示",
+                            "如果你已允许Scene自启动，手机重启后，Scene还会自动激活刚刚选择的模式。\n\n如果需要恢复系统默认调度，请再次点击，然后重启手机！",
+                            DialogHelper.DialogButton(getString(R.string.btn_confirm)),
+                            DialogHelper.DialogButton(getString(R.string.btn_dontshow), {
+                                globalSPF.edit().putBoolean(SpfConfig.GLOBAL_SPF_POWERCFG_FRIST_NOTIFY, true).apply()
+                            })).setCancelable(false)
+                }
+            }
+
+            progressBarDialog.hideDialog()
+        }
     }
 }
