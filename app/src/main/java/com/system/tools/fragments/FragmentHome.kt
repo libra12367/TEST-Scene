@@ -132,6 +132,21 @@ class FragmentHome : androidx.fragment.app.Fragment() {
             DialogElectricityUnit().showDialog(context!!)
         }
 
+        // 点击CPU核心 查看详细参数
+        cpu_core_list.setOnItemClickListener { _, _, position, _ ->
+            CpuFrequencyUtil.getCoregGovernorParams(position)?.run {
+                val msg = StringBuilder()
+                for (param in this) {
+                    msg.append("\n")
+                    msg.append(param.key)
+                    msg.append("：")
+                    msg.append(param.value)
+                    msg.append("\n")
+                }
+                DialogHelper.alert(activity!!, "调度器参数", msg.toString())
+            }
+        }
+
         home_device_name.text = when (Build.VERSION.SDK_INT) {
             31 -> "Android 12"
             30 -> "Android 11"
@@ -155,6 +170,12 @@ class FragmentHome : androidx.fragment.app.Fragment() {
             return
         }
         activity!!.title = getString(R.string.app_name)
+
+        if (globalSPF.getBoolean(SpfConfig.HOME_QUICK_SWITCH, true) && (CpuConfigInstaller().dynamicSupport(Scene.context) || modeSwitcher.modeConfigCompleted())) {
+            powermode_toggles.visibility = View.VISIBLE
+        } else {
+            powermode_toggles.visibility = View.GONE
+        }
 
         setModeState()
         maxFreqs.clear()
